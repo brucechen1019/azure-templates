@@ -16,10 +16,14 @@
         }
     },
     "outputs": {
-        "documentDbFullInfo": {
-            "type": "object",
-            "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('documentDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0])]"
-        }
+      "documentDbFullInfo": {
+          "type": "object",
+          "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('documentDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0])]"
+      },
+      "documentDbPrimaryMasterKey": {
+         "type": "object",
+         "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('documentDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0]).primaryMasterKey]"
+      }
     },
     "resources" : [
       {
