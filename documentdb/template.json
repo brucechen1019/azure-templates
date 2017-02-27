@@ -21,7 +21,7 @@
           "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('documentDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0])]"
       },
       "documentDbPrimaryMasterKey": {
-         "type": "object",
+         "type": "String",
          "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('documentDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0]).primaryMasterKey]"
       }
     },
