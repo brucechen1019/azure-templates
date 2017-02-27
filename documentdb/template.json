@@ -1,0 +1,38 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+    },
+    "variables": {
+        "uniqueResourcePrefix" : "[uniqueString(resourceGroup().id)]",
+        "documentDb" : {
+          "name" : "[concat(variables('uniqueResourcePrefix'), '-documentdb')]",
+          "databaseAccountOfferType" : "Standard",
+          "consistencyPolicy" : {
+            "defaultConsistencyLevel": "Session",
+            "maxIntervalInSeconds": 5,
+            "maxStalenessPrefix": 100
+          }
+        }
+    },
+    "outputs": {
+        "documentDbFullInfo": {
+            "type": "object",
+            "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('documentDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0])]"
+        }
+    },
+    "resources" : [
+      {
+          "type": "Microsoft.DocumentDB/databaseAccounts",
+          "kind": "GlobalDocumentDB",
+          "name": "[variables('documentDb').name]",
+          "apiVersion": "2015-04-08",
+          "location": "[resourceGroup().location]",
+          "properties": {
+              "databaseAccountOfferType": "[variables('documentDb').databaseAccountOfferType]",
+              "consistencyPolicy": "[variables('documentDb').consistencyPolicy]",
+              "name": "[variables('documentDb').name]"
+          }
+      }
+    ]
+}
