@@ -1,0 +1,153 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+    },
+    "variables": {
+        "uniqueResourcePrefix" : "[uniqueString(resourceGroup().id)]",
+        "nodeApp" : {
+          "name" : "[concat(variables('uniqueResourcePrefix'), '-nodeApp')]"
+        },
+        "servicePlan" : {
+          "name" : "[concat(variables('uniqueResourcePrefix'), '-servicePlan')]",
+          "sku" : {
+              "name": "S3",
+              "tier": "Standard",
+              "size": "S3",
+              "family": "S",
+              "capacity": 1
+          },
+          "numberOfWorkers" : 1
+        },
+        "hostingEnvironment" : {
+          "name" : "[concat(variables('uniqueResourcePrefix'), '-hostingEnvironment')]",
+          "ipSslAddressCount" : 1
+        },
+        "vnet" : {
+          "name" : "[concat(variables('uniqueResourcePrefix'), '-vnet')]",
+          "addressPrefixes" : "10.0.0.0/8",
+          "subnet" : {
+            "name" : "[concat(variables('uniqueResourcePrefix'), '-subnet')]",
+            "addressPrefix" : "10.0.1.0/24"
+          }
+        }
+    },
+    "resources" : [
+      {
+          "apiVersion": "2016-06-01",
+          "type": "Microsoft.Network/virtualNetworks/subnets",
+          "name": "[concat(variables('vnet').name, '/', variables('vnet').subnet.name)]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+              "[concat('Microsoft.Network/virtualNetworks/', variables('vnet').name)]"
+          ],
+          "properties": {
+              "addressPrefix": "[variables('vnet').subnet.addressPrefix]"
+          }
+      },
+      {
+          "apiVersion": "2016-06-01",
+          "type": "Microsoft.Network/virtualNetworks",
+          "name": "[variables('vnet').name]",
+          "location": "[resourceGroup().location]",
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "[variables('vnet').addressPrefixes]"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "[variables('vnet').subnet.name]",
+                      "properties": {
+                          "addressPrefix": "[variables('vnet').subnet.addressPrefix]"
+                      }
+                  }
+              ]
+          }
+      },
+      {
+        "apiVersion": "2016-09-01",
+        "name": "[variables('hostingEnvironment').name]",
+        "type": "Microsoft.Web/hostingEnvironments",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+          "[concat('Microsoft.Network/virtualNetworks/', variables('vnet').name, '/subnets/', variables('vnet').subnet.name)]"
+        ],
+        "properties": {
+          "Name": "[variables('hostingEnvironment').name]",
+          "ipSslAddressCount": "[variables('hostingEnvironment').ipSslAddressCount]",
+          "workerPools": [
+            {
+              "workerSizeId": 0,
+              "workerSize": "medium",
+              "workerCount": 1
+            }
+          ],
+          "location": "[resourceGroup().location]",
+          "MultiSize": "medium",
+          "MultiRoleCount": "1",
+          "VNETName": "[variables('vnet').name]",
+          "VNetResourceGroupName": "[resourceGroup().name]",
+          "VNETSubnetName": "[variables('vnet').subnet.name]"
+        }
+      },
+      {
+          "type": "Microsoft.Web/serverfarms",
+          "sku": "[variables('servicePlan').sku]",
+          "kind": "app",
+          "name": "[variables('servicePlan').name]",
+          "apiVersion": "2015-08-01",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Web/hostingEnvironments/',  variables('hostingEnvironment').name)]"
+          ],
+          "properties": {
+              "name": "[variables('servicePlan').name]",
+              "numberOfWorkers": "[variables('servicePlan').numberOfWorkers]",
+              "hostingEnvironment": "[parameters('environmentName')]",
+              "hostingEnvironmentId": "[resourceId('Microsoft.Web/hostingEnvironments', variables('hostingEnvironment').name)]"
+          }
+      },
+      {
+          "comments": "",
+          "type": "Microsoft.Web/sites",
+          "kind": "app",
+          "name": "[variables('nodeApp').name]",
+          "apiVersion": "2015-08-01",
+          "location": "[resourceGroup().location]",
+          "tags": {
+
+          },
+          "properties": {
+              "name": "[variables('nodeApp').name]",
+              "hostNames": [
+                  "[concat(variables('nodeApp').name,'.azurewebsites.net')]"
+              ],
+              "enabledHostNames": [
+                  "[concat(variables('nodeApp').name,'.azurewebsites.net')]",
+                  "[concat(variables('nodeApp').name,'.scm.azurewebsites.net')]"
+              ],
+              "hostNameSslStates": [
+                  {
+                      "name": "[concat(variables('nodeApp').name,'.azurewebsites.net')]",
+                      "sslState": 0,
+                      "thumbprint": null,
+                      "ipBasedSslState": 0
+                  },
+                  {
+                      "name": "[concat(variables('nodeApp').name,'.scm.azurewebsites.net')]",
+                      "sslState": 0,
+                      "thumbprint": null,
+                      "ipBasedSslState": 0
+                  }
+              ],
+              "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('servicePlan').name)]"
+          },
+          "resources": [],
+          "dependsOn": [
+              "[resourceId('Microsoft.Web/serverfarms', variables('servicePlan').name)]"
+          ]
+      }
+    ]
+}
